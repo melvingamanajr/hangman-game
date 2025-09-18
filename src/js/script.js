@@ -1,7 +1,9 @@
-import { dom, getState, setGameState } from './state.js';
+import { dom } from './state.js';
+import { store } from './store.js';
 import { playClickSound, setVolume, toggleMute } from './audio.js';
 import { showScreen, createCategoryButtons, createDifficultyButtons, resetFigure, displayStats, updateScoreDisplay, updateDailyStreakDisplay } from './ui.js';
-import { initializeGame, handleGuess, endGame } from './game.js';
+import { initializeGame, handleGuess, endGame, startTimedRushMode } from './game.js';
+import { showModal, hideModal, initializeModal } from './modal.js';
 import { startDailyChallenge, updateDailyChallengeButtonState } from './dailyChallenge.js';
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -16,15 +18,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const savedMuteState = localStorage.getItem('hangmanMuted') === 'true';
         const savedTheme = localStorage.getItem('hangmanTheme');
 
-        setGameState({
+        store.dispatch({ type: 'LOAD_SAVED_DATA', payload: {
             highScore: savedHighScore,
             dailyStreak: savedDailyStreak,
             bestStreak: savedBestStreak,
             gameStats: savedGameStats,
-        });
+        }});
 
         // UI Updates
-        updateScoreDisplay(0, savedHighScore);
+        updateScoreDisplay(0, store.getState().highScore);
         updateDailyStreakDisplay(savedDailyStreak);
         createCategoryButtons();
         createDifficultyButtons();
@@ -33,7 +35,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Settings
         setVolume(savedVolume);
-        dom.volumeSlider.value = savedVolume;
         toggleMute(savedMuteState);
 
         if (savedTheme === 'light') {
@@ -42,30 +43,36 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         showScreen('intro');
+        initializeModal();
     }
 
     // --- EVENT LISTENERS ---
     dom.startGameBtn.addEventListener('click', () => {
         playClickSound();
-        setGameState({ hasInteracted: true, currentScore: 0 });
-        updateScoreDisplay(0, getState().highScore);
+        store.dispatch({ type: 'START_GAME' });
+        updateScoreDisplay(0, store.getState().highScore);
         showScreen('category');
     });
 
     dom.dailyChallengeBtn.addEventListener('click', () => {
         playClickSound();
-        setGameState({ hasInteracted: true });
+        store.dispatch({ type: 'START_DAILY_CHALLENGE', payload: { word: startDailyChallenge() } });
         startDailyChallenge();
+    });
+
+    dom.timedRushBtn.addEventListener('click', () => {
+        playClickSound();
+        startTimedRushMode();
+        showScreen('game');
     });
 
     dom.quitGameBtn.addEventListener('click', () => {
         playClickSound();
-        dom.confirmModalContainer.classList.add('show');
+        showModal('confirm');
     });
 
     dom.backToIntroBtn.addEventListener('click', () => {
         playClickSound();
-        setGameState({ hasInteracted: true });
         showScreen('intro');
     });
 
@@ -76,7 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     dom.hintButton.addEventListener('click', () => {
         playClickSound();
-        const state = getState();
+        const state = store.getState();
         const hiddenLetters = state.selectedWord.split('').filter(letter => !state.correctLetters.includes(letter));
         if (hiddenLetters.length > 0) {
             const hintLetter = hiddenLetters[Math.floor(Math.random() * hiddenLetters.length)];
@@ -101,77 +108,48 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    dom.closeDailyPlayedBtn.addEventListener('click', () => {
-        playClickSound();
-        if (getState().dailyCountdownInterval) clearInterval(getState().dailyCountdownInterval);
-        dom.dailyPlayedModalContainer.classList.remove('show');
-    });
-
-    // Confirmation Modal Logic
-    dom.confirmQuitBtn.addEventListener('click', () => {
-        playClickSound();
-        if (getState().timerId) clearInterval(getState().timerId);
-        dom.confirmModalContainer.classList.remove('show');
-        updateDailyChallengeButtonState();
-        showScreen('category');
-    });
-
-    dom.cancelQuitBtn.addEventListener('click', () => {
-        playClickSound();
-        dom.confirmModalContainer.classList.remove('show');
-    });
-
-    // How to Play Modal Logic
+    // Modal Openers
     dom.howToPlayBtn.addEventListener('click', () => {
-        playClickSound();
-        dom.tutorialModalContainer.classList.add('show');
+        showModal('tutorial');
     });
 
-    dom.closeTutorialBtn.addEventListener('click', () => {
-        playClickSound();
-        dom.tutorialModalContainer.classList.remove('show');
-    });
-
-    // Statistics Modal Logic
     dom.statsBtn.addEventListener('click', () => {
-        playClickSound();
-        displayStats(getState().gameStats, getState().bestStreak);
-        dom.statsModalContainer.classList.add('show');
+        showModal('stats');
+        displayStats(store.getState().gameStats, store.getState().bestStreak);
     });
 
-    dom.closeStatsBtn.addEventListener('click', () => {
-        playClickSound();
-        dom.statsModalContainer.classList.remove('show');
-    });
-
-    dom.resetStatsBtn.addEventListener('click', () => {
-        playClickSound();
-        setGameState({ gameStats: { played: 0, wins: 0 } });
-        localStorage.removeItem('hangmanStats');
-        displayStats(getState().gameStats, getState().bestStreak);
-    });
-
-    // Settings Modal Logic
     dom.settingsBtn.addEventListener('click', () => {
-        playClickSound();
-        dom.settingsModalContainer.classList.add('show');
+        showModal('settings');
+        // We need to re-attach the listener for the dynamically created slider
+        dom.volumeSlider.addEventListener('input', (e) => {
+            const volume = parseFloat(e.target.value);
+            setVolume(volume, store.getState().isMuted);
+            localStorage.setItem('hangmanVolume', volume);
+        });
+        dom.volumeSlider.value = localStorage.getItem('hangmanVolume') || '1';
     });
 
-    dom.closeSettingsBtn.addEventListener('click', () => {
-        playClickSound();
-        dom.settingsModalContainer.classList.remove('show');
-    });
-
-    dom.volumeSlider.addEventListener('input', (e) => {
-        const volume = parseFloat(e.target.value);
-        setVolume(volume, getState().isMuted);
-        localStorage.setItem('hangmanVolume', volume);
+    // Event delegation for dynamically created modal buttons
+    dom.modalContent.addEventListener('click', (e) => {
+        if (e.target.id === 'confirm-quit-btn') {
+            playClickSound();
+            if (store.getState().timerId) clearInterval(store.getState().timerId);
+            if (store.getState().timedRushInterval) clearInterval(store.getState().timedRushInterval);
+            hideModal();
+            updateDailyChallengeButtonState();
+            showScreen('category');
+        }
+        if (e.target.id === 'reset-stats-btn') {
+            playClickSound();
+            store.dispatch({ type: 'RESET_STATS' });
+            localStorage.removeItem('hangmanStats');
+            displayStats(store.getState().gameStats, store.getState().bestStreak);
+        }
     });
 
     dom.muteBtn.addEventListener('click', () => {
         playClickSound();
-        const newMuteState = toggleMute(!getState().isMuted);
-        setGameState({ isMuted: newMuteState });
+        toggleMute(!store.getState().isMuted);
     });
 
     // Theme switcher logic

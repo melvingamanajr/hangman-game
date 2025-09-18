@@ -1,9 +1,11 @@
-import { dom, wordData, difficultySettings, getState } from './state.js';
+import { dom } from './state.js';
+import { store } from './store.js';
+import { wordData, difficultySettings } from './data.js';
 import { playBackgroundMusic, playClickSound } from './audio.js';
 import { startGameWithCategory, startGameWithDifficulty } from './game.js';
 
 export function showScreen(screenName) {
-    const state = getState();
+    const state = store.getState();
     let currentScreen = null;
     for (const key in dom.screens) {
         if (dom.screens[key].classList.contains('active')) {
@@ -30,15 +32,17 @@ export function createCategoryButtons() {
     for (const category in wordData) {
         const button = document.createElement('button');
         const categoryInfo = wordData[category];
+        const categoryName = category.charAt(0).toUpperCase() + category.slice(1);
         button.innerHTML = `
             <span class="category-icon">${categoryInfo.icon}</span>
-            <span class="category-name">${category.charAt(0).toUpperCase() + category.slice(1)}</span>
+            <span class="category-name">${categoryName}</span>
         `;
         button.classList.add('category-btn-item');
         button.addEventListener('click', () => {
             playClickSound();
             startGameWithCategory(category);
         });
+        button.setAttribute('aria-label', `Choose category: ${categoryName}`);
         dom.categoryButtonsDiv.appendChild(button);
     }
 }
@@ -48,15 +52,17 @@ export function createDifficultyButtons() {
     for (const level in difficultySettings) {
         const button = document.createElement('button');
         const levelInfo = difficultySettings[level];
+        const levelName = level.charAt(0).toUpperCase() + level.slice(1);
         button.innerHTML = `
             <span class="category-icon">${levelInfo.icon}</span>
-            <span class="category-name">${level.charAt(0).toUpperCase() + level.slice(1)}</span>
+            <span class="category-name">${levelName}</span>
         `;
         button.classList.add('category-btn-item');
         button.addEventListener('click', () => {
             playClickSound();
             startGameWithDifficulty(level);
         });
+        button.setAttribute('aria-label', `Choose difficulty: ${levelName}`);
         dom.difficultyButtonsDiv.appendChild(button);
     }
 }
@@ -93,6 +99,7 @@ export function createKeyboard(handleGuess) {
             key.textContent = letter;
             key.classList.add('key');
             key.setAttribute('data-key', letter);
+            key.setAttribute('aria-label', `Guess letter ${letter}`);
             key.addEventListener('click', () => handleGuess(letter, key));
             rowDiv.appendChild(key);
         });

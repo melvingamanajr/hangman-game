@@ -20,7 +20,7 @@
 }
 
 .light-mode .background-shapes li {
-    background: rgba(0, 0, 0, 0.05); /* Dark with low opacity for light mode */
+    background: rgba(0, 0, 0, 0.1); /* Increased opacity for better visibility */
 }
 
 * {
@@ -234,7 +234,7 @@ body.win-animation::before {
     color: white;
     border: none;
     border-radius: 8px;
-    padding: 18px 35px;
+    padding: 15px 25px; /* Reduce padding for smaller screens */
     margin: 20px 0;
     cursor: pointer;
     font-size: 22px;
@@ -247,6 +247,13 @@ body.win-animation::before {
     box-shadow: 0 4px 15px rgba(43, 108, 176, 0.4);
 }
 
+.secondary-buttons-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    width: 100%;
+    max-width: 350px;
+}
 .score-container {
     display: flex;
     gap: 30px;
@@ -457,6 +464,28 @@ input:checked + .slider:before {
     color: #f6ad55; /* A modern orange */
 }
 
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+        color: #e53e3e; /* Red color for urgency */
+    }
+}
+
+@keyframes pop {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.3);
+        color: #f6ad55; /* A modern orange */
+    }
+    100% {
+        transform: scale(1);
+    }
+}
 .btn-action {
     background-color: #3182ce; /* A nice blue for actions */
     color: #eeeeee;
@@ -636,7 +665,7 @@ input:checked + .slider:before {
     background: var(--secondary-color);
     color: var(--text-color); /* This will change based on theme */
     border-radius: 5px;
-    padding: 30px 50px;
+    padding: 20px; /* Reduce padding */
     text-align: center;
     animation: zoomIn 0.3s ease-out;
 }
@@ -727,7 +756,7 @@ input:checked + .slider:before {
 
 .btn-danger {
     background-color: #e53e3e;
-    padding:80px;
+    /* padding:80px; This was likely a typo and causing issues */
     color: white;
     border: none;
     border-radius: 8px;
@@ -757,6 +786,11 @@ input:checked + .slider:before {
     gap: 10px;
     font-weight: 600;
     animation: subtleGlow 4s ease-in-out infinite;
+}
+
+.btn-timed {
+    background: linear-gradient(45deg, #3182ce, #63b3ed); /* Blue gradient */
+    color: white;
 }
 
 .btn-icon-daily {

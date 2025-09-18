@@ -1,12 +1,14 @@
 import { dom } from './state.js';
+import { store } from './store.js';
 
 export const sounds = {
-    correct: new Audio('src/assets/sounds/correct.mp3'),
-    incorrect: new Audio('src/assets/sounds/incorrect.mp3'),
-    win: new Audio('src/assets/sounds/win.mp3'),
-    lose: new Audio('src/assets/sounds/lose.mp3'),
-    backgroundMusic: new Audio('src/assets/sounds/music.mp3'),
-    click: new Audio('src/assets/sounds/click.mp3'),
+    correct: new Audio('assets/sounds/correct.mp3'),
+    incorrect: new Audio('assets/sounds/incorrect.mp3'),
+    win: new Audio('assets/sounds/win.mp3'),
+    lose: new Audio('assets/sounds/lose.mp3'),
+    backgroundMusic: new Audio('assets/sounds/music.mp3'),
+    click: new Audio('assets/sounds/click.mp3'),
+    tick: new Audio('assets/sounds/tick.mp3'),
 };
 
 sounds.backgroundMusic.loop = true;
@@ -27,13 +29,14 @@ export function setVolume(volume, isMuted) {
 }
 
 export function toggleMute(shouldMute) {
-    const state = { isMuted: shouldMute };
-    allSounds.forEach(sound => sound.muted = state.isMuted);
-    dom.muteBtn.textContent = state.isMuted ? '🔇' : '🔊';
+    store.dispatch({ type: 'SET_MUTE', payload: { isMuted: shouldMute } });
+    allSounds.forEach(sound => sound.muted = shouldMute);
+    dom.muteBtn.textContent = shouldMute ? '🔇' : '🔊';
     // If unmuting and volume is 0, set it to a default
-    dom.volumeSlider.value = state.isMuted ? 0 : (localStorage.getItem('hangmanVolume') || 1);
-    localStorage.setItem('hangmanMuted', state.isMuted);
-    return state.isMuted;
+    if (dom.volumeSlider) { // Only update slider if it exists in the DOM
+        dom.volumeSlider.value = shouldMute ? 0 : (localStorage.getItem('hangmanVolume') || 1);
+    }
+    localStorage.setItem('hangmanMuted', shouldMute);
 }
 
 export function playBackgroundMusic(play) {

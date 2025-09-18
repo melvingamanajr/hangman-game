@@ -7,6 +7,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     <title>Hangman Game</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💀</text></svg>">
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -35,10 +36,16 @@
         </div>
         <p>The classic word guessing game.</p>
         <button id="start-game-btn" class="btn-primary">Start Game</button>
-        <button id="daily-challenge-btn" class="btn-secondary btn-daily" title="A unique challenge, the same for everyone each day!">
-            <span class="btn-icon-daily">🏆</span>
-            <span class="btn-text">Daily Challenge</span>
-        </button>
+        <div class="secondary-buttons-container">
+            <button id="timed-rush-btn" class="btn-secondary btn-timed" aria-label="Timed Rush: Solve as many words as you can in 3 minutes.">
+                <span class="btn-icon-daily">⏱️</span>
+                <span class="btn-text">Timed Rush</span>
+            </button>
+            <button id="daily-challenge-btn" class="btn-secondary btn-daily" aria-label="Daily Challenge: A unique challenge, the same for everyone each day!">
+                <span class="btn-icon-daily">🏆</span>
+                <span class="btn-text">Daily Challenge</span>
+            </button>
+        </div>
         <div class="score-container">
             <h2>High Score: <span id="high-score">0</span></h2>
             <h2>Daily Streak: <span id="daily-streak">0</span> 🔥</h2>
@@ -50,10 +57,10 @@
             </label>
         </div>
         <div class="settings-container">
-            <button id="settings-btn" class="btn-icon" title="Settings">⚙️</button>
-            <button id="how-to-play-btn" class="btn-icon" title="How to Play">❓</button>
-            <button id="stats-btn" class="btn-icon" title="Statistics">📊</button>
-            <button id="mute-btn" class="btn-icon" title="Mute">🔊</button>
+            <button id="settings-btn" class="btn-icon" aria-label="Settings">⚙️</button>
+            <button id="how-to-play-btn" class="btn-icon" aria-label="How to Play">❓</button>
+            <button id="stats-btn" class="btn-icon" aria-label="Statistics">📊</button>
+            <button id="mute-btn" class="btn-icon" aria-label="Mute">🔊</button>
         </div>
         <div class="creator-credit">
             <p>Created by Melvin</p>
@@ -62,7 +69,7 @@
 
     <!-- Difficulty Selection Screen -->
     <div id="difficulty-screen" class="screen">
-        <button id="back-to-category-btn" class="btn-return" title="Back to Categories"><span></span></button>
+        <button id="back-to-category-btn" class="btn-return" aria-label="Back to Categories"><span></span></button>
         <div class="difficulty-content-wrapper">
             <h2>Choose a Difficulty:</h2>
             <div id="difficulty-buttons" class="category-buttons"></div>
@@ -71,7 +78,7 @@
 
     <!-- Category Selection Screen -->
     <div id="category-screen" class="screen">
-        <button id="back-to-intro-btn" class="btn-return" title="Back to Main Menu"><span></span></button>
+        <button id="back-to-intro-btn" class="btn-return" aria-label="Back to Main Menu"><span></span></button>
         <div class="category-content-wrapper">
             <h2>Choose a Category:</h2>
             <div id="category-buttons-container" class="category-buttons"></div>
@@ -80,7 +87,7 @@
 
     <!-- Main Game Screen -->
     <div id="game-screen" class="screen">
-        <button id="quit-game-btn" class="btn-return" title="Back to Categories"><span></span></button>
+        <button id="quit-game-btn" class="btn-return" aria-label="Quit game and return to categories"><span></span></button>
         <div class="game-content-wrapper">
             <!-- Hangman Figure -->
             <svg height="250" width="200" class="hangman-figure">
@@ -111,6 +118,10 @@
                     <span class="info-label">Score</span>
                     <span id="current-score" class="info-value">0</span>
                 </div>
+                <div class="info-item" id="timed-rush-streak-container" style="display: none;">
+                    <span class="info-label">Streak</span>
+                    <span id="timed-rush-streak" class="info-value">0</span>
+                </div>
                 <div class="info-item">
                     <span class="info-label">Hint</span>
                     <span id="category-hint" class="info-value"></span>
@@ -119,10 +130,14 @@
                     <span class="info-label">Time</span>
                     <span id="timer" class="info-value">0s</span>
                 </div>
+                <div class="info-item" id="timed-rush-timer-container" style="display: none;">
+                    <span class="info-label">Time Left</span>
+                    <span id="timed-rush-timer" class="info-value">3:00</span>
+                </div>
             </div>
             <div class="hint-button-container">
-                <button id="hint-button" class="btn-action">Get a Hint</button>
-                <button id="reveal-word-btn" class="btn-action btn-danger-action">Reveal Word</button>
+                <button id="hint-button" class="btn-action" aria-label="Get a hint for one letter">Get a Hint</button>
+                <button id="reveal-word-btn" class="btn-action btn-danger-action" aria-label="Reveal the entire word and end the round">Reveal Word</button>
             </div>
 
             <div class="word-display"></div>
@@ -131,90 +146,12 @@
         </div>
     </div>
 
-    <!-- Game Over Modal -->
+    <!-- Universal Modal Container -->
     <div class="modal-container" id="modal-container">
-        <div id="game-over-modal-content" class="modal"></div>
-    </div>
-
-    <!-- Confirmation Modal -->
-    <div class="modal-container" id="confirm-modal-container">
-        <div class="modal">
-            <h2>Are you sure?</h2>
-            <p>You will lose your progress for this round.</p>
-            <div class="modal-buttons">
-                <button id="confirm-quit-btn" class="btn-danger">Yes, Quit</button>
-                <button id="cancel-quit-btn" class="btn-secondary">Cancel</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Daily Challenge Played Modal -->
-    <div class="modal-container" id="daily-played-modal-container">
-        <div class="modal">
-            <h2>Already Completed!</h2>
-            <p>You've already played the daily challenge today. Come back tomorrow for a new word!</p>
-            <p id="daily-countdown" class="countdown-timer"></p>
-            <div class="modal-buttons">
-                <button id="close-daily-played-btn" class="btn-primary">OK</button>
-            </div>
-        </div>
-    </div>
-    <!-- Settings Modal -->
-    <div class="modal-container" id="settings-modal-container">
-        <div class="modal">
-            <h2>Settings</h2>
-            <div class="setting-item">
-                <label for="volume-slider">Sound Volume</label>
-                <input type="range" id="volume-slider" min="0" max="1" step="0.1" value="1">
-            </div>
-            <button id="close-settings-btn" class="btn-primary">Close</button>
-        </div>
-    </div>
-
-    <!-- How to Play Modal -->
-    <div class="modal-container" id="tutorial-modal-container">
-        <div class="modal">
-            <h2>How to Play</h2>
-            <div class="tutorial-content">
-                <p>Guess the hidden word one letter at a time.</p>
-                <p>Use your mouse to click the on-screen keyboard, or just type with your physical keyboard.</p>
-                <p>Each incorrect guess will draw a part of the hangman. Don't let him be completed!</p>
-                <p>The difficulty level affects the time limit and whether hints are available.</p>
-                <p>Good luck!</p>
-            </div>
-            <button id="close-tutorial-btn" class="btn-primary">Got it!</button>
-        </div>
-    </div>
-
-    <!-- Statistics Modal -->
-    <div class="modal-container" id="stats-modal-container">
-        <div class="modal">
-            <h2>Statistics</h2>
-            <div class="stats-grid">
-                <div class="stat-item">
-                    <span id="stats-games-played" class="stat-value">0</span>
-                    <span class="stat-label">Played</span>
-                </div>
-                <div class="stat-item">
-                    <span id="stats-wins" class="stat-value">0</span>
-                    <span class="stat-label">Wins</span>
-                </div>
-                <div class="stat-item">
-                    <span id="stats-win-ratio" class="stat-value">0</span>
-                    <span class="stat-label">Win %</span>
-                </div>
-                <div class="stat-item">
-                    <span id="stats-best-streak" class="stat-value">0</span>
-                    <span class="stat-label">Best Streak</span>
-                </div>
-            </div>
-            <div class="modal-buttons">
-                <button id="reset-stats-btn" class="btn-secondary">Reset</button>
-                <button id="close-stats-btn" class="btn-primary">Close</button>
-            </div>
-        </div>
+        <div class="modal" id="modal-content"></div>
     </div>
 
     <script type="module" src="js/script.js"></script>
+    <script type="module" src="js/modal.js"></script>
 </body>
 </html>

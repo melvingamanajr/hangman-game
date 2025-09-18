@@ -1,4 +1,5 @@
-import { dom, dailyChallengeWords, difficultySettings, setGameState } from './state.js';
+import { dom } from './state.js';
+import { dailyChallengeWords } from './data.js';
 import { initializeGame } from './game.js';
 import { showScreen } from './ui.js';
 
@@ -14,15 +15,11 @@ export function startDailyChallenge() {
     const lastPlayedDate = localStorage.getItem('dailyChallengeLastPlayed');
 
     if (lastPlayedDate === todayStr) {
-        return;
+        return null; // Indicate challenge was already played
     }
-    setGameState({
-        selectedCategory: 'Daily Challenge',
-        selectedDifficulty: difficultySettings.hard,
-        selectedWord: getDailyWord(),
-    });
     showScreen('game');
     initializeGame();
+    return getDailyWord();
 }
 
 export function startDailyCountdown() {
