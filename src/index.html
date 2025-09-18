@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <title>Hangman Game</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Animated Background -->
+    <div class="background-shapes">
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+    </div>
+    <!-- Introduction Screen -->
+    <div id="intro-screen" class="screen active">
+        <div class="logo-container">
+            <svg id="game-logo" viewBox="0 0 400 100" xmlns="http://www.w3.org/2000/svg">
+                <text class="logo-text logo-h" x="0" y="70">H</text>
+                <path class="logo-gallows" d="M 58 90 L 58 20 L 115 20 M 95 20 L 95 40" />
+                <text class="logo-text logo-ngm" x="120" y="70">NGM</text>
+                <text class="logo-text logo-an" x="290" y="70">AN</text>
+            </svg>
+        </div>
+        <p>The classic word guessing game.</p>
+        <button id="start-game-btn" class="btn-primary">Start Game</button>
+        <button id="daily-challenge-btn" class="btn-secondary btn-daily" title="A unique challenge, the same for everyone each day!">
+            <span class="btn-icon-daily">🏆</span>
+            <span class="btn-text">Daily Challenge</span>
+        </button>
+        <div class="score-container">
+            <h2>High Score: <span id="high-score">0</span></h2>
+            <h2>Daily Streak: <span id="daily-streak">0</span> 🔥</h2>
+        </div>
+        <div class="theme-switcher-container">
+            <label class="theme-switcher">
+                <input type="checkbox" id="theme-toggle">
+                <span class="slider"></span>
+            </label>
+        </div>
+        <div class="settings-container">
+            <button id="settings-btn" class="btn-icon" title="Settings">⚙️</button>
+            <button id="how-to-play-btn" class="btn-icon" title="How to Play">❓</button>
+            <button id="stats-btn" class="btn-icon" title="Statistics">📊</button>
+            <button id="mute-btn" class="btn-icon" title="Mute">🔊</button>
+        </div>
+        <div class="creator-credit">
+            <p>Created by Melvin</p>
+        </div>
+    </div>
+
+    <!-- Difficulty Selection Screen -->
+    <div id="difficulty-screen" class="screen">
+        <button id="back-to-category-btn" class="btn-return" title="Back to Categories"><span></span></button>
+        <div class="difficulty-content-wrapper">
+            <h2>Choose a Difficulty:</h2>
+            <div id="difficulty-buttons" class="category-buttons"></div>
+        </div>
+    </div>
+
+    <!-- Category Selection Screen -->
+    <div id="category-screen" class="screen">
+        <button id="back-to-intro-btn" class="btn-return" title="Back to Main Menu"><span></span></button>
+        <div class="category-content-wrapper">
+            <h2>Choose a Category:</h2>
+            <div id="category-buttons-container" class="category-buttons"></div>
+        </div>
+    </div>
+
+    <!-- Main Game Screen -->
+    <div id="game-screen" class="screen">
+        <button id="quit-game-btn" class="btn-return" title="Back to Categories"><span></span></button>
+        <div class="game-content-wrapper">
+            <!-- Hangman Figure -->
+            <svg height="250" width="200" class="hangman-figure">
+                <!-- Stand -->
+                <line x1="60" y1="20" x2="140" y2="20" />
+                <line x1="140" y1="20" x2="140" y2="50" />
+                <line x1="60" y1="20" x2="60" y2="230" />
+                <line x1="20" y1="230" x2="100" y2="230" />
+
+                <!-- Stylized Body Parts (initially hidden) -->
+                <g id="figure-head" class="figure-part">
+                    <circle cx="140" cy="70" r="20" />
+                    <!-- Dizzy face for game over -->
+                    <g class="dizzy-face">
+                        <line x1="130" y1="65" x2="140" y2="75" /> <line x1="140" y1="65" x2="130" y2="75" />
+                        <line x1="145" y1="65" x2="155" y2="75" /> <line x1="155" y1="65" x2="145" y2="75" />
+                    </g>
+                </g>
+                <path d="M 140 90 V 150" class="figure-part" /> <!-- Body -->
+                <path d="M 140 110 L 110 130 L 100 120" class="figure-part" /> <!-- Left Arm -->
+                <path d="M 140 110 L 170 130 L 180 120" class="figure-part" /> <!-- Right Arm -->
+                <path d="M 140 150 L 120 180 L 110 178" class="figure-part" /> <!-- Left Leg -->
+                <path d="M 140 150 L 160 180 L 170 178" class="figure-part" /> <!-- Right Leg -->
+            </svg>
+
+            <div class="game-info-container">
+                <div class="info-item">
+                    <span class="info-label">Score</span>
+                    <span id="current-score" class="info-value">0</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Hint</span>
+                    <span id="category-hint" class="info-value"></span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Time</span>
+                    <span id="timer" class="info-value">0s</span>
+                </div>
+            </div>
+            <div class="hint-button-container">
+                <button id="hint-button" class="btn-action">Get a Hint</button>
+                <button id="reveal-word-btn" class="btn-action btn-danger-action">Reveal Word</button>
+            </div>
+
+            <div class="word-display"></div>
+
+            <div class="keyboard"></div>
+        </div>
+    </div>
+
+    <!-- Game Over Modal -->
+    <div class="modal-container" id="modal-container">
+        <div id="game-over-modal-content" class="modal"></div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div class="modal-container" id="confirm-modal-container">
+        <div class="modal">
+            <h2>Are you sure?</h2>
+            <p>You will lose your progress for this round.</p>
+            <div class="modal-buttons">
+                <button id="confirm-quit-btn" class="btn-danger">Yes, Quit</button>
+                <button id="cancel-quit-btn" class="btn-secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Daily Challenge Played Modal -->
+    <div class="modal-container" id="daily-played-modal-container">
+        <div class="modal">
+            <h2>Already Completed!</h2>
+            <p>You've already played the daily challenge today. Come back tomorrow for a new word!</p>
+            <p id="daily-countdown" class="countdown-timer"></p>
+            <div class="modal-buttons">
+                <button id="close-daily-played-btn" class="btn-primary">OK</button>
+            </div>
+        </div>
+    </div>
+    <!-- Settings Modal -->
+    <div class="modal-container" id="settings-modal-container">
+        <div class="modal">
+            <h2>Settings</h2>
+            <div class="setting-item">
+                <label for="volume-slider">Sound Volume</label>
+                <input type="range" id="volume-slider" min="0" max="1" step="0.1" value="1">
+            </div>
+            <button id="close-settings-btn" class="btn-primary">Close</button>
+        </div>
+    </div>
+
+    <!-- How to Play Modal -->
+    <div class="modal-container" id="tutorial-modal-container">
+        <div class="modal">
+            <h2>How to Play</h2>
+            <div class="tutorial-content">
+                <p>Guess the hidden word one letter at a time.</p>
+                <p>Use your mouse to click the on-screen keyboard, or just type with your physical keyboard.</p>
+                <p>Each incorrect guess will draw a part of the hangman. Don't let him be completed!</p>
+                <p>The difficulty level affects the time limit and whether hints are available.</p>
+                <p>Good luck!</p>
+            </div>
+            <button id="close-tutorial-btn" class="btn-primary">Got it!</button>
+        </div>
+    </div>
+
+    <!-- Statistics Modal -->
+    <div class="modal-container" id="stats-modal-container">
+        <div class="modal">
+            <h2>Statistics</h2>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <span id="stats-games-played" class="stat-value">0</span>
+                    <span class="stat-label">Played</span>
+                </div>
+                <div class="stat-item">
+                    <span id="stats-wins" class="stat-value">0</span>
+                    <span class="stat-label">Wins</span>
+                </div>
+                <div class="stat-item">
+                    <span id="stats-win-ratio" class="stat-value">0</span>
+                    <span class="stat-label">Win %</span>
+                </div>
+                <div class="stat-item">
+                    <span id="stats-best-streak" class="stat-value">0</span>
+                    <span class="stat-label">Best Streak</span>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button id="reset-stats-btn" class="btn-secondary">Reset</button>
+                <button id="close-stats-btn" class="btn-primary">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="js/script.js"></script>
+</body>
+</html>
