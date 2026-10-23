@@ -1,63 +1,38 @@
 import { dom } from './state.js';
+import { store } from './store.js';
 import { dailyChallengeWords } from './data.js';
-import { initializeGame } from './game.js';
-import { showScreen } from './ui.js';
+import { initializeGame, stopGame } from './game.js';
+import { showScreen, updateDailyStreakDisplay } from './ui.js';
+import { showModal } from './modal.js';
+import { storage } from './storage.js';
 
 export function getDailyWord() {
     const today = new Date();
     const seed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
-    const index = seed % dailyChallengeWords.length;
-    return dailyChallengeWords[index];
+    return dailyChallengeWords[seed % dailyChallengeWords.length];
 }
-
 export function startDailyChallenge() {
-    const todayStr = new Date().toDateString();
-    const lastPlayedDate = localStorage.getItem('dailyChallengeLastPlayed');
-
-    if (lastPlayedDate === todayStr) {
-        return null; // Indicate challenge was already played
+    if (storage.getItem('dailyChallengeLastPlayed') === new Date().toDateString()) {
+        showModal('dailyPlayed');
+        return;
     }
-    showScreen('game');
+    stopGame();
+    store.dispatch({ type: 'START_DAILY_CHALLENGE', payload: { word: getDailyWord() } });
     initializeGame();
-    return getDailyWord();
+    showScreen('game');
 }
-
-export function startDailyCountdown() {
-    const originalText = dom.dailyChallengeBtnText.innerHTML;
-    let interval;
-
-    const updateCountdown = () => {
-        const now = new Date();
-        const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-        const diff = tomorrow - now;
-
-        if (diff < 0) {
-            dom.dailyChallengeBtnText.textContent = "New Challenge!";
-            clearInterval(interval);
-            return;
-        }
-        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-        dom.dailyChallengeBtnText.textContent = `Next in: ${hours}h ${minutes}m ${seconds}s`;
-    };
-
-    dom.dailyChallengeBtn.addEventListener('mouseenter', () => {
-        clearInterval(interval);
-        updateCountdown();
-        interval = setInterval(updateCountdown, 1000);
-    });
-
-    dom.dailyChallengeBtn.addEventListener('mouseleave', () => {
-        clearInterval(interval);
-        dom.dailyChallengeBtnText.innerHTML = originalText;
-    });
-}
-
 export function updateDailyChallengeButtonState() {
-    const todayStr = new Date().toDateString();
-    const lastPlayedDate = localStorage.getItem('dailyChallengeLastPlayed');
-    dom.dailyChallengeBtn.disabled = lastPlayedDate === todayStr;
-    dom.dailyChallengeBtnText.textContent = lastPlayedDate === todayStr ? 'Completed ✓' : 'Daily Challenge';
-    if (dom.dailyChallengeBtn.disabled) startDailyCountdown();
+    const today = new Date();
+    const yesterday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1).toDateString();
+    const lastWin = storage.getItem('dailyChallengeLastWinDate');
+    if (lastWin !== today.toDateString() && lastWin !== yesterday && store.getState().dailyStreak) {
+        store.dispatch({ type: 'LOAD_SAVED_DATA', payload: { dailyStreak: 0 } });
+        storage.setItem('dailyChallengeStreak', 0);
+        updateDailyStreakDisplay(0);
+    }
+    const completed = storage.getItem('dailyChallengeLastPlayed') === today.toDateString();
+    dom.dailyChallengeBtn.disabled = completed;
+    dom.dailyChallengeBtnText.textContent = completed ? 'Played today ✓' : 'Daily Challenge';
+    dom.dailyChallengeBtn.querySelector('small').textContent = completed ?
+        'A new word arrives at local midnight.' : 'One word a day. Build your streak.';
 }

@@ -26,7 +26,6 @@ export const dom = {
     dailyChallengeBtnText: document.getElementById('daily-challenge-btn').querySelector('.btn-text'),
     backToIntroBtn: document.getElementById('back-to-intro-btn'),
     backToCategoryBtn: document.getElementById('back-to-category-btn'),
-    dailyCountdown: document.getElementById('daily-countdown'),
     difficultyButtonsDiv: document.getElementById('difficulty-buttons'),
     muteBtn: document.getElementById('mute-btn'),
     volumeSlider: null, // Will be queried dynamically

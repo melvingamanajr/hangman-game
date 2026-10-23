@@ -1,159 +1,127 @@
 import { dom } from './state.js';
 import { store } from './store.js';
 import { wordData, difficultySettings } from './data.js';
-import { playBackgroundMusic, playClickSound } from './audio.js';
+import { getWordClue } from './clues.js';
+import { playClickSound } from './audio.js';
 import { startGameWithCategory, startGameWithDifficulty } from './game.js';
 
 export function showScreen(screenName) {
-    const state = store.getState();
-    let currentScreen = null;
-    for (const key in dom.screens) {
-        if (dom.screens[key].classList.contains('active')) {
-            currentScreen = dom.screens[key];
-            break;
-        }
-    }
-
-    if (currentScreen) {
-        currentScreen.classList.remove('active');
-        setTimeout(() => {
-            dom.screens[screenName].classList.add('active');
-        }, 400);
-    } else {
-        dom.screens[screenName].classList.add('active');
-    }
-
-    const shouldPlayMusic = ['intro', 'category', 'difficulty'].includes(screenName);
-    playBackgroundMusic(shouldPlayMusic && state.hasInteracted);
+    Object.entries(dom.screens).forEach(([name, screen]) => {
+        screen.hidden = name !== screenName;
+        screen.classList.toggle('active', name === screenName);
+    });
+    dom.screens[screenName].querySelector('h1')?.focus({ preventScroll: true });
 }
-
 export function createCategoryButtons() {
-    dom.categoryButtonsDiv.innerHTML = '';
-    for (const category in wordData) {
+    dom.categoryButtonsDiv.replaceChildren();
+    for (const [category, info] of Object.entries(wordData)) {
+        const name = category[0].toUpperCase() + category.slice(1);
         const button = document.createElement('button');
-        const categoryInfo = wordData[category];
-        const categoryName = category.charAt(0).toUpperCase() + category.slice(1);
-        button.innerHTML = `
-            <span class="category-icon">${categoryInfo.icon}</span>
-            <span class="category-name">${categoryName}</span>
-        `;
-        button.classList.add('category-btn-item');
-        button.addEventListener('click', () => {
-            playClickSound();
-            startGameWithCategory(category);
-        });
-        button.setAttribute('aria-label', `Choose category: ${categoryName}`);
-        dom.categoryButtonsDiv.appendChild(button);
+        button.className = 'category-btn-item';
+        button.innerHTML = `<span class="category-icon" aria-hidden="true">${info.icon}</span><span class="category-name">${name}<span class="category-detail">${info.words.length} words to discover</span></span>`;
+        button.addEventListener('click', () => { playClickSound(); startGameWithCategory(category); });
+        dom.categoryButtonsDiv.append(button);
     }
 }
-
 export function createDifficultyButtons() {
-    dom.difficultyButtonsDiv.innerHTML = '';
-    for (const level in difficultySettings) {
+    dom.difficultyButtonsDiv.replaceChildren();
+    for (const [level, info] of Object.entries(difficultySettings)) {
         const button = document.createElement('button');
-        const levelInfo = difficultySettings[level];
-        const levelName = level.charAt(0).toUpperCase() + level.slice(1);
-        button.innerHTML = `
-            <span class="category-icon">${levelInfo.icon}</span>
-            <span class="category-name">${levelName}</span>
-        `;
-        button.classList.add('category-btn-item');
-        button.addEventListener('click', () => {
-            playClickSound();
-            startGameWithDifficulty(level);
-        });
-        button.setAttribute('aria-label', `Choose difficulty: ${levelName}`);
-        dom.difficultyButtonsDiv.appendChild(button);
+        button.className = 'category-btn-item';
+        button.innerHTML = `<span class="category-icon" aria-hidden="true">${info.icon}</span><span class="category-name">${level[0].toUpperCase() + level.slice(1)}<span class="category-detail">${info.time} seconds<br>${info.hints ? 'One free letter hint' : 'No letter hints. Trust your instincts.'}</span></span>`;
+        button.addEventListener('click', () => { playClickSound(); startGameWithDifficulty(level); });
+        dom.difficultyButtonsDiv.append(button);
     }
 }
-
 export function displayWord(word) {
-    dom.wordDisplay.innerHTML = word
-        .split('')
-        .map(
-            letter => `
-                <span class="letter" data-letter="${letter}">
-                    <span class="letter-inner">
-                        <span class="letter-front"></span>
-                        <span class="letter-back">${letter}</span>
-                    </span>
-                </span>
-            `
-        )
-        .join('');
+    dom.wordDisplay.replaceChildren();
+    dom.wordDisplay.style.setProperty('--word-length', word.length);
+    [...word].forEach(() => {
+        const tile = document.createElement('span');
+        tile.className = 'letter';
+        tile.setAttribute('aria-hidden', 'true');
+        dom.wordDisplay.append(tile);
+    });
+    document.getElementById('word-length').textContent = `${word.length} LETTERS · THE HIDDEN WORD`;
+    document.getElementById('word-description').textContent = getWordClue(word);
+    document.getElementById('clue-timing').textContent = store.getState().gameMode === 'timedRush' ?
+        'Use the clue to keep your rush going.' : 'Take your time. Your first letter starts the clock.';
+    updateWordLabel();
 }
-
-export function revealLetter(guessedLetter) {
-    const letterElements = document.querySelectorAll(`.letter[data-letter="${guessedLetter}"]`);
-    letterElements.forEach(el => el.classList.add('flip'));
+function updateWordLabel() {
+    const { selectedWord, correctLetters } = store.getState();
+    const pattern = [...selectedWord].map(letter => correctLetters.includes(letter) ? letter.toUpperCase() : 'blank').join(', ');
+    dom.wordDisplay.setAttribute('aria-label', `${selectedWord.length} letters: ${pattern}`);
 }
-
+export function revealLetter(letter) {
+    [...dom.wordDisplay.children].forEach((tile, index) => {
+        if (store.getState().selectedWord[index] === letter) {
+            tile.textContent = letter;
+            tile.classList.add('revealed');
+        }
+    });
+    updateWordLabel();
+}
+export function revealWord() {
+    const { selectedWord, correctLetters } = store.getState();
+    [...dom.wordDisplay.children].forEach((tile, index) => {
+        tile.textContent = selectedWord[index];
+        tile.classList.add(correctLetters.includes(selectedWord[index]) ? 'revealed' : 'missed');
+    });
+    dom.wordDisplay.setAttribute('aria-label', `The word was ${selectedWord}`);
+}
 export function createKeyboard(handleGuess) {
-    const keyboardLayout = ['qwertyuiop', 'asdfghjkl', 'zxcvbnm'];
-    dom.keyboardDiv.innerHTML = '';
-    keyboardLayout.forEach(row => {
+    dom.keyboardDiv.replaceChildren();
+    ['qwertyuiop', 'asdfghjkl', 'zxcvbnm'].forEach(row => {
         const rowDiv = document.createElement('div');
-        rowDiv.classList.add('keyboard-row');
-        row.split('').forEach(letter => {
+        rowDiv.className = 'keyboard-row';
+        [...row].forEach(letter => {
             const key = document.createElement('button');
             key.textContent = letter;
-            key.classList.add('key');
-            key.setAttribute('data-key', letter);
-            key.setAttribute('aria-label', `Guess letter ${letter}`);
+            key.className = 'key';
+            key.dataset.key = letter;
+            key.setAttribute('aria-label', `Guess letter ${letter.toUpperCase()}`);
             key.addEventListener('click', () => handleGuess(letter, key));
-            rowDiv.appendChild(key);
+            rowDiv.append(key);
         });
-        dom.keyboardDiv.appendChild(rowDiv);
+        dom.keyboardDiv.append(rowDiv);
     });
 }
-
-export function updateFigure(wrongGuessCount) {
-    dom.hangmanParts.forEach((part, index) => {
-        if (index < wrongGuessCount) {
-            part.classList.add('visible');
-        }
-    });
+export function updateFigure(count) {
+    dom.hangmanParts.forEach((part, index) => part.classList.toggle('visible', index < count));
+    const lives = document.getElementById('lives-display');
+    lives.innerHTML = Array.from({ length: 6 }, (_, index) => `<span class="life${index < count ? ' lost' : ''}" aria-hidden="true"></span>`).join('');
+    lives.setAttribute('aria-label', `${6 - count} incorrect guesses remaining`);
 }
-
-export function resetFigure() {
-    dom.hangmanParts.forEach(part => {
-        part.classList.remove('dizzy');
-        part.classList.remove('visible');
-    });
+export const resetFigure = () => updateFigure(0);
+export function feedback(message, type = '') {
+    const element = document.getElementById('guess-feedback');
+    element.textContent = message;
+    element.className = `guess-feedback ${type}`;
 }
-
 export function updateScoreDisplay(currentScore, highScore) {
     dom.currentScoreSpan.textContent = currentScore;
     dom.highScoreSpan.textContent = highScore;
 }
-
-export function updateDailyStreakDisplay(dailyStreak) {
-    dom.dailyStreakSpan.textContent = dailyStreak;
-}
-
-export function displayStats(gameStats, bestStreak) {
-    document.getElementById('stats-games-played').textContent = gameStats.played;
-    document.getElementById('stats-wins').textContent = gameStats.wins;
+export function updateDailyStreakDisplay(value) { dom.dailyStreakSpan.textContent = value; }
+export function displayStats(stats, bestStreak) {
+    document.getElementById('stats-games-played').textContent = stats.played;
+    document.getElementById('stats-wins').textContent = stats.wins;
     document.getElementById('stats-best-streak').textContent = bestStreak;
-    const winRatio = gameStats.played > 0 ? Math.round((gameStats.wins / gameStats.played) * 100) : 0;
-    document.getElementById('stats-win-ratio').textContent = winRatio;
+    document.getElementById('stats-win-ratio').textContent = stats.played ? Math.round(stats.wins / stats.played * 100) : 0;
 }
-
 export async function shareScore(highScore) {
-    const shareText = `I set a new high score of ${highScore} in Hangman! Can you beat it?`;
-    const shareData = {
-        title: 'Hangman High Score!',
-        text: shareText,
-        url: window.location.href
-    };
+    const text = `I solved ${highScore} words in Hangman! Can you beat it?`;
     try {
-        if (navigator.share) {
-            await navigator.share(shareData);
-        } else {
-            await navigator.clipboard.writeText(shareText);
-            alert('High score message copied to clipboard!');
+        if (navigator.share) await navigator.share({ title: 'Hangman', text, url: window.location.href });
+        else {
+            await navigator.clipboard.writeText(text);
+            const button = document.getElementById('share-score-btn');
+            if (button) button.textContent = 'Copied!';
         }
-    } catch (err) {
-        alert(`Couldn't share automatically. Here's your message to copy: ${shareText}`);
+    } catch (error) {
+        if (error.name === 'AbortError') return;
+        const message = document.getElementById('share-feedback');
+        if (message) message.textContent = text;
     }
 }
